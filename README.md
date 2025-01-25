@@ -19,7 +19,7 @@ Meeting Cost Calculator is a Chrome extension that helps you understand the true
 
 ## Usage
 1. Open Google Calendar and create or edit an event
-2. The Meeting Cost Calculator will automatically appear in the event editor
+2. The Meeting Cost Calculator will automatically appear in the event editor modal
 3. Set your desired hourly rate (defaults to $150/hour)
 4. The calculator will automatically update as you:
    - Add or remove attendees
