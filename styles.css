@@ -3,3 +3,97 @@
   padding: 10px;
   background-color: #f9f9f9;
 }
+
+body {
+    width: 400px;
+    min-height: 300px;
+    padding: 24px;
+    font-family: 'Google Sans', Roboto, Arial, sans-serif;
+    color: #3c4043;
+    margin: 0;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+h1 {
+    font-size: 24px;
+    font-weight: 400;
+    margin: 0;
+    color: #1a73e8;
+}
+
+.rate-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+label {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+input[type="number"] {
+    padding: 8px 12px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+input[type="number"]:focus {
+    border-color: #1a73e8;
+}
+
+button {
+    background-color: #1a73e8;
+    color: white;
+    border: none;
+    padding: 8px 24px;
+    border-radius: 4px;
+    font-family: 'Google Sans', Roboto, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: #1557b0;
+}
+
+.status-message {
+    font-size: 14px;
+    color: #1e8e3e;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.status-message.show {
+    opacity: 1;
+}
+
+.info-section {
+    background-color: #f8f9fa;
+    padding: 16px;
+    border-radius: 8px;
+    margin-top: 24px;
+}
+
+.info-section h2 {
+    font-size: 16px;
+    font-weight: 500;
+    margin: 0 0 8px 0;
+}
+
+.info-section p {
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+    color: #5f6368;
+}

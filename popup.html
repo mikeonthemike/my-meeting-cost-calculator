@@ -1,13 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Meeting Cost Settings</title>
+  <title>Meeting Cost Calculator Settings</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h3>Default Hourly Rates</h3>
-  <input type="number" id="default-rate" placeholder="Enter default rate" />
-  <button id="save">Save</button>
+  <div class="container">
+    <h1>Meeting Cost Calculator</h1>
+    
+    <div class="rate-input-group">
+      <label for="hourlyRate">Default Hourly Rate (per attendee)</label>
+      <input type="number" id="hourlyRate" min="0" step="0.01" placeholder="Enter hourly rate" />
+    </div>
+
+    <button id="saveRate">Save Settings</button>
+    
+    <div id="statusMessage" class="status-message" style="display: none;">
+      <!-- Will be populated dynamically by popup.js -->
+    </div>
+
+    <div class="info-section">
+      <h2>About</h2>
+      <p>This calculator helps you estimate the true cost of meetings based on attendees' time and your specified hourly rate. The cost updates automatically as you modify meeting details in Google Calendar.</p>
+    </div>
+  </div>
   <script src="popup.js"></script>
 </body>
 </html>
