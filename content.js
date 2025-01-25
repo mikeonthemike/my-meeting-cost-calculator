@@ -117,14 +117,21 @@ const injectCostCalculator = () => {
             ].join(', '));
             
             if (!guestContainer) {
-                console.debug('Guest container not found. Modal contents:', modal.innerHTML);
+                // If no guest container found, we're in initial state with just organizer
+                const attendeeDisplay = document.querySelector("#attendee-count");
+                if (attendeeDisplay) {
+                    attendeeDisplay.textContent = "Number of Attendees: 1";
+                    console.debug('Initial state: just organizer');
+                }
+                calculateCost(1);
                 return;
             }
 
             // Find all elements with data-email attribute
             const guestElements = guestContainer.querySelectorAll('div[data-email]');
-            // The total count is just the number of guests (organizer is included in data-email)
-            const attendeeCount = guestElements.length;
+            
+            // If no guests added yet, count is 1 (just organizer)
+            const attendeeCount = guestElements.length || 1;
             
             console.debug(`Found ${guestElements.length} guests with data-email attributes`);
             
