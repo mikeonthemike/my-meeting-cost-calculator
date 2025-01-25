@@ -107,8 +107,7 @@ const injectCostCalculator = () => {
             // Debug: Log all aria-labels in the modal to find the right one
             const allAriaLabels = Array.from(modal.querySelectorAll('[aria-label]'))
                 .map(el => el.getAttribute('aria-label'));
-            console.debug('Available aria-labels:', allAriaLabels);
-
+            
             // Find the guest list container using multiple possible aria-labels
             const guestContainer = modal.querySelector([
                 'div[aria-label="Guests invited to this event"]',
@@ -221,33 +220,83 @@ const injectCostCalculator = () => {
         console.error('Error setting up observers:', error);
     }
 
-    // Update duration when time inputs change
+    // Function to update duration based on start and end times
     const updateDuration = () => {
-        const startTimeInput = modal.querySelector('input[aria-label*="Start time"]');
-        const endTimeInput = modal.querySelector('input[aria-label*="End time"]');
+        const startTimeInput = modal.querySelector('input[aria-label="Start time"]');
+        const endTimeInput = modal.querySelector('input[aria-label="End time"]');
+        const startDateInput = modal.querySelector('input[aria-label="Start date"]');
+        const endDateInput = modal.querySelector('input[aria-label="End date"]');
         const durationInput = document.querySelector("#meeting-duration");
         
-        if (startTimeInput && endTimeInput) {
-            const startTime = new Date(`1970/01/01 ${startTimeInput.value}`);
-            const endTime = new Date(`1970/01/01 ${endTimeInput.value}`);
-            const durationHours = (endTime - startTime) / (1000 * 60 * 60);
+        if (startTimeInput && endTimeInput && startDateInput && endDateInput) {
+            // Get dates from data-date attribute
+            const startDate = startDateInput.getAttribute('data-date');
+            const endDate = endDateInput.getAttribute('data-date');
+            
+            // Combine date and time
+            const startDateTime = new Date(`${startDate.slice(0,4)}-${startDate.slice(4,6)}-${startDate.slice(6,8)} ${startTimeInput.value}`);
+            const endDateTime = new Date(`${endDate.slice(0,4)}-${endDate.slice(4,6)}-${endDate.slice(6,8)} ${endTimeInput.value}`);
+            
+            // Calculate duration in hours
+            const durationHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
             durationInput.value = durationHours.toFixed(2);
+            
+            console.debug('Duration calculated:', {
+                startDate,
+                endDate,
+                startTime: startTimeInput.value,
+                endTime: endTimeInput.value,
+                duration: durationHours
+            });
+            
+            // Recalculate cost with new duration
+            const attendeeCount = document.querySelector("#attendee-count")?.textContent.match(/\d+/) || 0;
+            calculateCost(parseInt(attendeeCount));
         }
     };
 
-    // Watch for changes to the time inputs
-    const observer = new MutationObserver((mutations) => {
+    // Watch for changes to the time and date inputs
+    const timeObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+            if (mutation.type === 'attributes' || 
+                (mutation.target.tagName === 'INPUT' && 
+                 (mutation.target.getAttribute('aria-label')?.includes('time') ||
+                  mutation.target.getAttribute('aria-label')?.includes('date')))) {
                 updateDuration();
             }
         });
     });
 
-    const timeInputs = modal.querySelectorAll('input[aria-label*="time"]');
+    // Find all time and date inputs
+    const timeInputs = modal.querySelectorAll([
+        'input[aria-label="Start time"]',
+        'input[aria-label="End time"]',
+        'input[aria-label="Start date"]',
+        'input[aria-label="End date"]'
+    ].join(', '));
+
+    // Observe each input
     timeInputs.forEach(input => {
-        observer.observe(input, { attributes: true });
+        timeObserver.observe(input, { 
+            attributes: true,
+            characterData: true,
+            childList: true
+        });
     });
+
+    // Also observe the parent containers for structural changes
+    timeInputs.forEach(input => {
+        const parent = input.parentElement;
+        if (parent) {
+            timeObserver.observe(parent, {
+                childList: true,
+                subtree: true
+            });
+        }
+    });
+
+    // Initial duration calculation
+    updateDuration();
   };
   
   // Initialize a MutationObserver to detect changes in the DOM
