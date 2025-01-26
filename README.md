@@ -24,7 +24,7 @@ Meeting Cost Calculator is a Chrome extension that helps you understand the true
 4. The calculator will automatically update as you:
    - Add or remove attendees
    - Adjust meeting duration
-   - Modify the hourly rate
+   - Modify the hourly rate (via the extension icon in the toolbar)
 
 ## Configuration
 - Click the extension icon in your Chrome toolbar
