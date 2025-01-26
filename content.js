@@ -368,6 +368,7 @@ module.exports = {
     calculateCost,
     updateDuration,
     updateAttendeeCount,
-    initMutationObserver
+    initMutationObserver,
+    injectCostCalculator
 };
   
