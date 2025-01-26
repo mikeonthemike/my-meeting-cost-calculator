@@ -15,7 +15,7 @@ Meeting Cost Calculator is a Chrome extension that helps you understand the true
 1. Clone this repository or download the source code
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the extension directory
+4. Click "Load unpacked" and select the extension/src directory
 
 ## Usage
 1. Open Google Calendar and create or edit an event
@@ -34,10 +34,17 @@ Meeting Cost Calculator is a Chrome extension that helps you understand the true
 ## Technical Details
 The extension consists of several key components:
 - `content.js`: Handles the core calculator logic and Google Calendar integration
+- `icon.png`: The extension icon
 - `popup.js`: Manages the extension popup interface
 - `manifest.json`: Defines extension metadata and permissions
 - `popup.html`: Provides the rate configuration interface
 - `styles.css`: Styles the extension's UI elements
+
+## Tests
+To run the tests, use the following command:
+```
+npm test
+```
 
 ## Permissions
 This extension requires:
