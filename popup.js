@@ -25,3 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+module.exports = {
+  // any functions you need to export for testing
+};

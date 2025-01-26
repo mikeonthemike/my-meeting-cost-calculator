@@ -1,5 +1,31 @@
 // content.js
 
+// Pure calculation functions outside of injectCostCalculator
+const calculateCost = (attendeeCount, duration, hourlyRate) => {
+    const cost = hourlyRate * duration * attendeeCount;
+    return cost;
+};
+
+const updateDuration = (startDateTime, endDateTime) => {
+    if (!startDateTime || !endDateTime) {
+        return 0;
+    }
+    // Calculate duration in hours
+    const durationHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
+    return parseFloat(durationHours.toFixed(2));
+};
+
+const updateAttendeeCount = (guestElements) => {
+    try {
+        // If no guest elements, return 1 for just the organizer
+        // Otherwise, return the guest count (which includes organizer)
+        return guestElements?.length || 1;
+    } catch (error) {
+        console.error('Error calculating attendee count:', error);
+        return 1; // Default to 1 (organizer only) in case of error
+    }
+};
+
 // Function to inject the cost calculator into the Google Calendar modal
 const injectCostCalculator = () => {
     // Try multiple selectors to find the event editor modal
@@ -101,13 +127,9 @@ const injectCostCalculator = () => {
         chrome.storage.sync.set({ hourlyRate: e.target.value });
     });
   
-    // Function to count attendees with error handling
-    const updateAttendeeCount = () => {
+    // Function to handle DOM updates for attendee count
+    const updateAttendeeDisplay = () => {
         try {
-            // Debug: Log all aria-labels in the modal to find the right one
-            const allAriaLabels = Array.from(modal.querySelectorAll('[aria-label]'))
-                .map(el => el.getAttribute('aria-label'));
-            
             // Find the guest list container using multiple possible aria-labels
             const guestContainer = modal.querySelector([
                 'div[aria-label="Guests invited to this event"]',
@@ -116,68 +138,148 @@ const injectCostCalculator = () => {
                 'div[aria-label*="Guest"]'
             ].join(', '));
             
-            if (!guestContainer) {
-                // If no guest container found, we're in initial state with just organizer
-                const attendeeDisplay = document.querySelector("#attendee-count");
-                if (attendeeDisplay) {
-                    attendeeDisplay.textContent = "Number of Attendees: 1";
-                    console.debug('Initial state: just organizer');
-                }
-                calculateCost(1);
-                return;
-            }
-
             // Find all elements with data-email attribute
-            const guestElements = guestContainer.querySelectorAll('div[data-email]');
+            const guestElements = guestContainer ? 
+                Array.from(guestContainer.querySelectorAll('div[data-email]')) : 
+                [];
             
-            // If no guests added yet, count is 1 (just organizer)
-            const attendeeCount = guestElements.length || 1;
-            
-            console.debug(`Found ${guestElements.length} guests with data-email attributes`);
+            // Get total attendees (will be 1 if no guests, otherwise uses guest list which includes organizer)
+            const attendeeCount = updateAttendeeCount(guestElements);
             
             const attendeeDisplay = document.querySelector("#attendee-count");
             if (attendeeDisplay) {
                 attendeeDisplay.textContent = `Number of Attendees: ${attendeeCount}`;
-                console.debug(`Updated attendee count to ${attendeeCount}`);
             }
             
             // Recalculate cost with new attendee count
-            calculateCost(attendeeCount);
+            const hourlyRate = parseFloat(document.querySelector("#hourly-rate").value) || 0;
+            const duration = parseFloat(document.querySelector("#meeting-duration").value) || 0;
+            const totalCost = calculateCost(attendeeCount, duration, hourlyRate);
+            document.querySelector("#cost-output").textContent = 
+                `Total Cost: $${totalCost.toFixed(2)} (${attendeeCount} attendees)`;
+
         } catch (error) {
             console.error('Error updating attendee count:', error);
-            // If we get an invalidated context error, reload the page
             if (error.message.includes('Extension context invalidated')) {
                 window.location.reload();
             }
         }
     };
 
-    // Function to calculate cost
-    const calculateCost = (attendeeCount) => {
-        const hourlyRate = parseFloat(document.querySelector("#hourly-rate").value) || 0;
-        const duration = parseFloat(document.querySelector("#meeting-duration").value) || 0;
-        const totalCost = hourlyRate * duration * attendeeCount;
-        
-        document.querySelector("#cost-output").textContent = 
-            `Total Cost: $${totalCost.toFixed(2)} (${attendeeCount} attendees)`;
+    // Function to handle DOM updates for duration
+    const updateDurationDisplay = () => {
+        try {
+            const startTimeInput = modal.querySelector('input[aria-label*="Start time"]');
+            const endTimeInput = modal.querySelector('input[aria-label*="End time"]');
+            const startDateInput = modal.querySelector('input[aria-label*="Start date"]');
+            const endDateInput = modal.querySelector('input[aria-label*="End date"]');
+            const durationInput = document.querySelector("#meeting-duration");
+            
+            // Only proceed if we have all required inputs and they have values
+            if (!startTimeInput?.value || !endTimeInput?.value || 
+                !startDateInput?.value || !endDateInput?.value || !durationInput) {
+                return;
+            }
+
+            // Get dates and times
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            const startTime = startTimeInput.value;
+            const endTime = endTimeInput.value;
+            
+            try {
+                // Format date strings properly
+                const startDateTime = new Date(`${startDate} ${startTime}`);
+                const endDateTime = new Date(`${endDate} ${endTime}`);
+                
+                if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+                    return;
+                }
+
+                // Use the pure function for calculation
+                const durationHours = updateDuration(startDateTime, endDateTime);
+                durationInput.value = durationHours;
+                
+                // Get current attendee count and recalculate cost
+                const attendeeCountElement = document.querySelector("#attendee-count");
+                const attendeeMatch = attendeeCountElement?.textContent.match(/\d+/);
+                const attendeeCount = attendeeMatch ? parseInt(attendeeMatch[0]) : 1;
+                
+                // Get hourly rate
+                const hourlyRate = parseFloat(document.querySelector("#hourly-rate")?.value) || 0;
+                
+                // Calculate and update total cost
+                const totalCost = calculateCost(attendeeCount, durationHours, hourlyRate);
+                const costOutput = document.querySelector("#cost-output");
+                if (costOutput) {
+                    costOutput.textContent = `Total Cost: $${totalCost.toFixed(2)} (${attendeeCount} attendees)`;
+                }
+            } catch (error) {
+                // Silently fail for date parsing errors
+                return;
+            }
+        } catch (error) {
+            // Only log critical errors
+            console.error('Critical error in updateDurationDisplay:', error);
+        }
     };
+
+    // Watch for changes to the time and date inputs
+    const timeObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            // Only update if we're dealing with an input element
+            if (mutation.target.tagName === 'INPUT' && 
+                (mutation.target.getAttribute('aria-label')?.includes('time') ||
+                 mutation.target.getAttribute('aria-label')?.includes('date'))) {
+                updateDurationDisplay();
+            }
+        });
+    });
+
+    // Find all time and date inputs
+    const timeInputs = modal.querySelectorAll([
+        'input[aria-label*="Start time"]',
+        'input[aria-label*="End time"]',
+        'input[aria-label*="Start date"]',
+        'input[aria-label*="End date"]'
+    ].join(', '));
+
+    // Observe each input
+    timeInputs.forEach(input => {
+        timeObserver.observe(input, { 
+            attributes: true,
+            characterData: true
+        });
+    });
+
+    // Add direct event listeners for input changes
+    modal.addEventListener('input', (event) => {
+        if (event.target.tagName === 'INPUT' && 
+            (event.target.getAttribute('aria-label')?.includes('time') ||
+             event.target.getAttribute('aria-label')?.includes('date'))) {
+            updateDurationDisplay();
+        }
+    });
+
+    // Initial duration calculation
+    updateDurationDisplay();
 
     // Update calculate button click handler
     document.querySelector("#calculate-cost").addEventListener("click", () => {
         const guestList = modal.querySelectorAll('div[role="listitem"], div[data-guest-id]');
         const attendeeCount = guestList.length + 1;
-        calculateCost(attendeeCount);
+        calculateCost(attendeeCount, 0, 0);
     });
 
     try {
         // Watch for changes in the guest list
         const guestListObserver = new MutationObserver((mutations) => {
-            try {
-                console.debug('Detected changes in modal:', mutations.length);
-                setTimeout(updateAttendeeCount, 100);
-            } catch (error) {
-                console.error('Error in observer callback:', error);
-            }
+            mutations.forEach(mutation => {
+                if (mutation.type === 'childList' || mutation.type === 'attributes') {
+                    console.debug('Guest list changed, updating display');
+                    updateAttendeeDisplay();
+                }
+            });
         });
 
         // Find the guest container and observe it
@@ -186,7 +288,8 @@ const injectCostCalculator = () => {
             guestListObserver.observe(guestContainer, {
                 childList: true,
                 subtree: true,
-                attributes: true
+                attributes: true,
+                characterData: true
             });
 
             // Also observe the parent container for structural changes
@@ -206,11 +309,11 @@ const injectCostCalculator = () => {
         });
 
         // Initial count
-        updateAttendeeCount();
+        updateAttendeeDisplay();
 
         // Re-run attendee count when the modal is clicked
         modal.addEventListener('click', () => {
-            setTimeout(updateAttendeeCount, 200);
+            setTimeout(updateAttendeeDisplay, 200);
         });
 
         // Add a periodic check as a fallback
@@ -220,121 +323,51 @@ const injectCostCalculator = () => {
                 guestListObserver.disconnect();
                 return;
             }
-            updateAttendeeCount();
+            updateAttendeeDisplay();
         }, 1000);
 
     } catch (error) {
         console.error('Error setting up observers:', error);
     }
-
-    // Function to update duration based on start and end times
-    const updateDuration = () => {
-        const startTimeInput = modal.querySelector('input[aria-label="Start time"]');
-        const endTimeInput = modal.querySelector('input[aria-label="End time"]');
-        const startDateInput = modal.querySelector('input[aria-label="Start date"]');
-        const endDateInput = modal.querySelector('input[aria-label="End date"]');
-        const durationInput = document.querySelector("#meeting-duration");
-        
-        if (startTimeInput && endTimeInput && startDateInput && endDateInput) {
-            // Get dates from data-date attribute
-            const startDate = startDateInput.getAttribute('data-date');
-            const endDate = endDateInput.getAttribute('data-date');
-            
-            // Combine date and time
-            const startDateTime = new Date(`${startDate.slice(0,4)}-${startDate.slice(4,6)}-${startDate.slice(6,8)} ${startTimeInput.value}`);
-            const endDateTime = new Date(`${endDate.slice(0,4)}-${endDate.slice(4,6)}-${endDate.slice(6,8)} ${endTimeInput.value}`);
-            
-            // Calculate duration in hours
-            const durationHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
-            durationInput.value = durationHours.toFixed(2);
-            
-            console.debug('Duration calculated:', {
-                startDate,
-                endDate,
-                startTime: startTimeInput.value,
-                endTime: endTimeInput.value,
-                duration: durationHours
-            });
-            
-            // Recalculate cost with new duration
-            const attendeeCount = document.querySelector("#attendee-count")?.textContent.match(/\d+/) || 0;
-            calculateCost(parseInt(attendeeCount));
-        }
-    };
-
-    // Watch for changes to the time and date inputs
-    const timeObserver = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'attributes' || 
-                (mutation.target.tagName === 'INPUT' && 
-                 (mutation.target.getAttribute('aria-label')?.includes('time') ||
-                  mutation.target.getAttribute('aria-label')?.includes('date')))) {
-                updateDuration();
-            }
-        });
-    });
-
-    // Find all time and date inputs
-    const timeInputs = modal.querySelectorAll([
-        'input[aria-label="Start time"]',
-        'input[aria-label="End time"]',
-        'input[aria-label="Start date"]',
-        'input[aria-label="End date"]'
-    ].join(', '));
-
-    // Observe each input
-    timeInputs.forEach(input => {
-        timeObserver.observe(input, { 
-            attributes: true,
-            characterData: true,
-            childList: true
-        });
-    });
-
-    // Also observe the parent containers for structural changes
-    timeInputs.forEach(input => {
-        const parent = input.parentElement;
-        if (parent) {
-            timeObserver.observe(parent, {
-                childList: true,
-                subtree: true
-            });
-        }
-    });
-
-    // Initial duration calculation
-    updateDuration();
-  };
+};
   
-  // Initialize a MutationObserver to detect changes in the DOM
-  const initMutationObserver = () => {
+// Initialize a MutationObserver to detect changes in the DOM
+const initMutationObserver = () => {
     try {
-      console.log("Starting MutationObserver...");
-  
-      // Create the observer
-      const observer = new MutationObserver(() => {
-        // Inject calculator when the modal appears
-        injectCostCalculator();
-      });
-  
-      // Target node to observe
-      const targetNode = document.body;
-  
-      // Ensure the target node exists
-      if (targetNode) {
-        observer.observe(targetNode, { childList: true, subtree: true });
-        console.log("MutationObserver is observing the DOM.");
-      } else {
-        console.error("Target node is null. MutationObserver cannot start.");
-      }
+        console.log("Starting MutationObserver...");
+    
+        // Create the observer
+        const observer = new MutationObserver(() => {
+            // Inject calculator when the modal appears
+            injectCostCalculator();
+        });
+    
+        // Target node to observe
+        const targetNode = document.body;
+    
+        // Ensure the target node exists
+        if (targetNode) {
+            observer.observe(targetNode, { childList: true, subtree: true });
+            console.log("MutationObserver is observing the DOM.");
+        } else {
+            console.error("Target node is null. MutationObserver cannot start.");
+        }
     } catch (error) {
-      console.error("Error initializing MutationObserver:", error);
+        console.error("Error initializing MutationObserver:", error);
     }
-  };
+};
   
-  // Ensure the script runs only after the DOM is fully loaded
-  document.addEventListener("DOMContentLoaded", () => {
+// Ensure the script runs only after the DOM is fully loaded
+document.addEventListener("DOMContentLoaded", () => {
     console.log("DOM fully loaded. Initializing...");
     initMutationObserver();
-  });
+});
+  
+// Export the functions
+module.exports = {
+    calculateCost,
+    updateDuration,
+    updateAttendeeCount,
+    initMutationObserver
+};
   

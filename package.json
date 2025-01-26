@@ -1,0 +1,39 @@
+{
+  "type": "module",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.7",
+    "@babel/preset-env": "^7.26.7",
+    "@testing-library/jest-dom": "^5.17.0",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.0.0",
+    "jest-environment-jsdom": "^29.0.0"
+  },
+  "jest": {
+    "setupFilesAfterEnv": ["./jest.setup.js"],
+    "testEnvironment": "jsdom",
+    "transform": {
+      "^.+\\.js$": "babel-jest"
+    },
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx}",
+      "!**/node_modules/**"
+    ]
+  },
+  "name": "my-meeting-cost-calculator",
+  "description": "Meeting Cost Calculator is a Chrome extension that helps you understand the true cost of meetings by calculating the total expense based on attendees, duration, and hourly rates. It seamlessly integrates with Google Calendar to provide real-time cost calculations as you schedule meetings.",
+  "version": "1.0.0",
+  "main": "content.js",
+  "directories": {
+    "test": "tests"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
