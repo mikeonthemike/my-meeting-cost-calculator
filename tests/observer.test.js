@@ -1,4 +1,4 @@
-const { initMutationObserver } = require('../content');
+const { initMutationObserver } = require('../src/content');
 
 describe('MutationObserver Integration', () => {
   let observerCallback;

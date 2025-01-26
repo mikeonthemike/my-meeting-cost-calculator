@@ -12,7 +12,7 @@ describe('Chrome Storage Integration', () => {
 
   test('Loads saved hourly rate from storage', () => {
     // Change async import to require
-    const popup = require('../popup');
+    const popup = require('../src/popup.js');
     
     // Setup spy
     const getSpy = jest.spyOn(chrome.storage.sync, 'get')
@@ -35,7 +35,7 @@ describe('Chrome Storage Integration', () => {
       });
 
     // Load popup.js module
-    await import('../popup.js');
+    await import('../src/popup.js');
     
     // Trigger DOMContentLoaded
     document.dispatchEvent(new Event('DOMContentLoaded'));

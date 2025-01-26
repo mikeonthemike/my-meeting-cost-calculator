@@ -1,4 +1,4 @@
-const { calculateCost, updateDuration, updateAttendeeCount } = require('../content');
+const { calculateCost, updateDuration, updateAttendeeCount } = require('../src/content');
 
 describe('Cost Calculator Core Functions', () => {
   beforeEach(() => {

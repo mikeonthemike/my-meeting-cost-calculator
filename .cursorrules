@@ -7,6 +7,7 @@ The system is a Google Chrome extension designed to integrate with Google Calend
 
 ### Main Components and Their Roles
 - **`content.js`**: This script is injected into the Google Calendar event editor modal. It is responsible for dynamically appending the cost calculator UI, setting up event listeners, and updating cost calculations in real-time as the meeting details change.
+- **`icon.png`**: The icon for the extension.
 - **`popup.js`**: Handles user interactions within the extension's popup, specifically saving the default hourly rate to Chrome's storage.
 - **`manifest.json`**: Defines the extension's metadata, permissions, and the files to be injected into Google Calendar.
 - **`popup.html`**: Provides the user interface for inputting and saving the default hourly rate.

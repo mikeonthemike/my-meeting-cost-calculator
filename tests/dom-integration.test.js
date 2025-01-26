@@ -1,4 +1,4 @@
-import { injectCostCalculator } from '../content';
+import { injectCostCalculator } from '../src/content';
 
 describe('DOM Integration Tests', () => {
   beforeEach(() => {
