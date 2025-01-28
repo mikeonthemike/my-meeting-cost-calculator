@@ -3,7 +3,7 @@
   "name": "Meeting Cost Calculator",
   "version": "0.0.1",
   "description": "Calculate the cost of a meeting in Google Calendar before sending the invite.",
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["storage"],
   "host_permissions": ["https://calendar.google.com/*"],
   "action": {
     "default_popup": "popup.html",
